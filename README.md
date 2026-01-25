@@ -53,5 +53,5 @@ Simulated Active Directory penetration test demonstrating common attack techniqu
 Educational purposes only. Performed in isolated lab environment.
 
 ## References
-- [TCM Security - PEH](https://academy.tcm-sec.com/)
+- [TCM Security - PEH](https://academy.tcm-sec.com/p/practical-ethical-hacking-the-complete-course)
 - [MITRE ATT&CK](https://attack.mitre.org/)
