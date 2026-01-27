@@ -4,7 +4,7 @@
 Simulated Active Directory penetration test demonstrating common attack techniques in a controlled lab environment.
 
 ## Lab Environment
-- **Domain Controller:** Windows Server 2019
+- **Domain Controller:** Windows Server 2022
 - **Workstations:** 2x Windows 10  
 - **Attacker:** Kali Linux
 - **Network:** 192.168.100.0/24
