@@ -9,31 +9,30 @@ Simulated Active Directory penetration test demonstrating common attack techniqu
 - **Attacker:** Kali Linux
 - **Network:** 192.168.100.0/24
 
-## Attack Chain
-
 ### 1. Initial Access
-- LLMNR Poisoning (Responder)
-- SMB Relay Attack
-- Hash cracking
+- LLMNR/MDNS Poisoning (Responder) → captured NTLMv2 hash
+- Hash cracking (Hashcat + rockyou.txt) → plaintext credential
+- SMB Relay Attack (ntlmrelayx) → SAM hashes dump
 
-### 2. Enumeration  
-- BloodHound domain mapping
-- Attack path analysis
+### 2. Post-Exploitation / Lateral Movement  
+- IPv6 Attack (mitm6 + ntlmrelayx) → LDAPS relay → DCSync rights
 
-### 3. Privilege Escalation
-- Kerberoasting
-- Pass-the-Hash lateral movement
+### 3. Enumeration
+- BloodHound domain mapping + attack path analysis
 
-### 4. Domain Compromise
-- NTDS.dit dump
-- Full domain takeover
+### 4. Privilege Escalation
+- Kerberoasting → TGS hash → cracked (Hashcat)
+- Pass-the-Hash → SYSTEM shell (smbexec)
 
+### 5. Domain Compromise
+- NTDS.dit dump → full domain credential dump
+  
 ## Tools Used
 - Kali Linux
 - Responder
 - Impacket
 - BloodHound
-- Mimikatz
+- Mitm6
 - Hashcat
 
 ## Key Findings
