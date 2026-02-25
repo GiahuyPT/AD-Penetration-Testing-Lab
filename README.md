@@ -37,11 +37,12 @@ Simulated Active Directory penetration test demonstrating common attack techniqu
 - Hashcat
 
 ## Key Findings
-| Vulnerability | Severity |
-|--------------|----------|
-| LLMNR Enabled | High |
+| Vulnerability          | Severity |
+|------------------------|----------|
+| LLMNR Enabled          | High     |
 | Weak Service Passwords | Critical |
-| SMB Signing Disabled | High |
+| SMB Signing Disabled   | High     |
+| IPv6 Not Disabled      | High     |
 
 ## Mitigations
 - Disable LLMNR/NBT-NS
