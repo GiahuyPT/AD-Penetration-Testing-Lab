@@ -30,9 +30,10 @@ Simulated Active Directory penetration test demonstrating common attack techniqu
 ## Tools Used
 - Kali Linux
 - Responder
-- Impacket
+- Impacket (ntlmrelayx, smbexec, secretsdump)
+- netexec
 - BloodHound
-- Mitm6
+- mitm6
 - Hashcat
 
 ## Key Findings
